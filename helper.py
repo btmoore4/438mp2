@@ -1,26 +1,45 @@
 #File Containing Helper Functions
 
 def synMess(seq): 
-    return formatMess(seq, 0, 1, 0, "")
+    return formatMess(seq, 0, 1, 0, 0,"")
 
 def synackMess(seq, ack_num): 
-    return formatMess(seq, ack_num+1, 1, 0, "")
+    return formatMess(seq, ack_num+1, 1, 0, 0,"")
 
 def ackMess(ack_num): 
-    return formatMess(0, ack_num+1, 1, 0, "")
+    return formatMess(0, ack_num+1, 1, 0, 0,"")
 
 def finMess(ack_num): 
-    return formatMess(0, ack_num, 0, 1, "")
+    return formatMess(0, ack_num, 0, 1, 0,"")
 
-def formatMess(seq_num, ack_num, syn, fin, data):
-    message = ",".join([str(seq_num), str(ack_num), str(syn), str(fin), str(data)])
+def dataMess(data, seq): 
+    return formatMess(seq, 0, 0, 0, len(data), data)
+
+def ackDataMess(seq_num, ack_num): 
+    return formatMess(seq_num, ack_num, 0, 0, 0, "")
+
+def formatMess(seq_num, ack_num, syn, fin, len_data, data):
+    message = ",".join([str(seq_num), str(ack_num), str(syn), str(fin), str(len_data), str(data)])
     return message
 
 def decodeMess(mess):
     message = mess.split(',')
-    for i in xrange(0,4):
+    for i in xrange(0,5):
         message[i] = int(message[i])
     return message
 
+#Defined Errors
+class MP2SocketError(Exception):
+    """ Exception base class for protocol errors """
+    pass
+class SYN_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
+class SYNACK_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
+class ACK_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
 
 

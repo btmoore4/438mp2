@@ -1,23 +1,30 @@
-from socket import *
 from helper import *
+from sender import *
+
+import socket
+import random
+
 """
 Implements the MP2 socket class, as described below
 """
+
 SEQ = 0
 ACK = 1
 SYN = 2
 FIN = 3
+LEN = 4
+DATA = 5
 
-class MP2SocketError(Exception):
-    """ Exception base class for protocol errors """
-    pass
+PKT = 2048
+PKT2 = 4
 
 class MP2Socket:
     def __init__(self):
-        self.sock = socket(AF_INET, SOCK_DGRAM)
-        self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"
-        self.addr = ("",0)
+        self.seq = random.randint(1, 1000)
+        self.sender = None
 
     def connect(self, addr):
         """
@@ -30,27 +37,27 @@ class MP2Socket:
         This call raises MP2SocketError if a connection cannot be established.
         It does not return any value on success
         """
-        # ----- SETTING ARB SEQ -----
-        x = 108
         # ----- SEND SYN -----
         print 'SEND SYN'
-        syn_mess = synMess(x)
-        self.sock.sendto(syn_mess.encode(),addr)
+        self.sock.sendto(synMess(self.seq), addr)
+
         # ----- WAITING FOR SYNACK -----
         print 'WAITING FOR SYNACK'
-        synack_mess, serverAddress = self.sock.recvfrom(2048)
-        synack_mess = decodeMess(synack_mess.decode())
+        raw_msg, server_addr = self.sock.recvfrom(PKT)
+        synack_mess = decodeMess(raw_msg)
+        print synack_mess
+
         # ----- IF INCORRECT SYNACK -----
-        if synack_mess[SYN] != 1 or synack_mess[ACK] != x + 1:
-            print "NOT RIGHT SYNACK"
-            #EXCEPTION
+        if synack_mess[SYN] != 1 or synack_mess[ACK] != self.seq + 1:
+            raise SYNACK_Error("Client expecting valid SYNACK message.")
+
         # ----- SEND ACK -----
         print 'SEND ACK'
-        ack_mess = ackMess(synack_mess[SEQ]) 
-        self.sock.sendto(ack_mess.encode(),addr)
+        self.sock.sendto(ackMess(synack_mess[SEQ]), addr)
+
+        # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
-        self.connection = "ESTABLISHED"
-        self.addr = addr
+        self.sender = Sender(self.sock, self.seq, addr)
 
     def accept(self, port):
         """
@@ -62,33 +69,34 @@ class MP2Socket:
         Raises MP2SocketError if an error is encountered (e.g., UDP port
         already in use)
         """
-        # ----- SETTING ARB SEQ -----
-        y = 47
         # ----- WAITING FOR SYN -----
         print 'WAITING FOR SYN'
         self.sock.bind(('', port))
-        syn_mess, clientAddress = self.sock.recvfrom(2048)
-        syn_mess = decodeMess(syn_mess.decode())
+        raw_msg, client_addr = self.sock.recvfrom(PKT)
+        syn_mess = decodeMess(raw_msg)
+        print syn_mess
+
         # ----- IF MESS IS NOT SYN -----
         if syn_mess[SYN] != 1:
-            print "NOT A SYN MES"
-            #EXCEPTION
+            raise SYN_Error("Server expecting SYN message.")
+
         # ----- SEND SYN_ACK -----
         print 'SEND SYN_ACK' 
-        synack_mess = synackMess(y, syn_mess[SEQ]) 
-        self.sock.sendto(synack_mess.encode(),clientAddress)
+        self.sock.sendto(synackMess(self.seq, syn_mess[SEQ]), client_addr)
+
         # ----- WAIT FOR ACK -----
         print 'WAIT FOR ACK'
-        ack_mess, clientAddress = self.sock.recvfrom(2048)
-        ack_mess = decodeMess(ack_mess.decode())
+        raw_msg, client_addr = self.sock.recvfrom(PKT)
+        ack_mess = decodeMess(raw_msg)
+        print ack_mess
+
         # ----- IF INCORRECT ACK -----
-        if ack_mess[ACK] != y + 1:
-            print "INCORRECT ACK"
-            #EXCEPTION
+        if ack_mess[ACK] != self.seq + 1:
+            raise ACK_Error("Server expecting valid ACK message.")
+
+        # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
-        self.connection = "ESTABLISHED"
-        self.addr = clientAddress
-        return clientAddress
+        return client_addr
 
     def send(self, data):
         """
@@ -100,8 +108,7 @@ class MP2Socket:
 
         Should be called on a socket after connect or accept
         """
-        self.connection = "ESTABLISHED"
-        pass
+        self.sender.send(data)
 
     def recv(self, length):
         """
@@ -109,7 +116,13 @@ class MP2Socket:
         is available, then return up to `length` bytes. Should return "" when
         the remote end closes the socket
         """
-        pass
+        #Basic Receiver
+        while True:
+            raw_msg, send_addr = self.sock.recvfrom(PKT)
+            data_msg = decodeMess(raw_msg)
+            print data_msg
+            ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
+            self.sock.sendto(ack_mess, send_addr)
 
     def close(self):
         """
@@ -127,12 +140,10 @@ class MP2Socket:
         # ----- SEND FIN -----
         print 'SEND FIN'
         fin_mess = finMess(x)
-        self.sock.sendto(fin_mess.encode(),self.addr)
+        self.sock.sendto(fin_mess,self.addr)
         # ----- WAITING FOR ACK -----
         print 'WAIT FOR ACK'
-        ack_mess, addr = self.sock.recvfrom(2048)
-        ack_mess = decodeMess(ack_mess.decode())
-     
- 
+        ack_mess, addr = self.sock.recvfrom(PKT)
+        ack_mess = decodeMess(ack_mess)
 
-        pass
+
