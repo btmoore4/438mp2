@@ -22,7 +22,6 @@ class Receiver:
     def start(self):
         while True:
             raw_msg, send_addr = self.sock.recvfrom(PKT+50)
-            #print raw_msg
             data_msg = decodeMess(raw_msg)
             if data_msg[FIN] == 1:
                 break
@@ -39,7 +38,7 @@ class Receiver:
             else:
                 ack_mess = ackDataMess(self.seq, self.acked) 
                 self.sock.sendto(ack_mess, send_addr)
-		print self.acked
+	    print self.acked
 	
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
