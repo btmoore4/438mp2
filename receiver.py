@@ -22,7 +22,7 @@ class Receiver:
 
     def start(self):
         while True:
-            raw_msg, send_addr = self.sock.recvfrom(PKT+40)
+            raw_msg, send_addr = self.sock.recvfrom(PKT+50)
             #print raw_msg
             data_msg = decodeMess(raw_msg)
             if data_msg[FIN] == 1:
@@ -39,10 +39,15 @@ class Receiver:
                 self.sock.sendto(ack_mess, send_addr)
                 self.add(data_msg[DATA])
                 self.acked = self.acked + data_msg[LEN]
+		#print self.acked
+            elif self.acked > data_msg[SEQ]:
+                ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
+                self.sock.sendto(ack_mess, send_addr)
             else:
                 self.sock.sendto(self.prevAck, send_addr)
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
+	print "RECEIVER IS DONE"
         self.receiverDone = True
 
     def recv(self, length): 
@@ -68,6 +73,8 @@ class Receiver:
             return None
         while not self.dataBuffer:
             time.sleep(0.1)
+            if self.receiverDone:
+		break
         self.lock.acquire()
         if len(self.dataBuffer) > length:
             data = self.dataBuffer[0:length]

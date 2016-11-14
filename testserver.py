@@ -16,7 +16,7 @@ while True:
     f.write(data)
 
 f.close()
-print "GETTING HERE"
+print "CLOSING SOCKET"
 socket.close()
 print("Receiving successful")
 
