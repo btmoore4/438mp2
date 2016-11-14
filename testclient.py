@@ -4,7 +4,8 @@ import time
 
 host = 'localhost'
 port = 1111
-filename="peter.txt"
+filename="tests/peter.txt"
+count = 0 
 
 print "testclient.py - Initiate Socket and Connection"
 f = open(filename, 'rb')
@@ -18,6 +19,7 @@ except MP2SocketError:
 print "testclient.py - Begin sending"
 while True:
     data = f.read(PKT)
+    count = count + len(data) 
     if not data:
         break
     socket.send(data)
@@ -25,3 +27,4 @@ while True:
 f.close()
 socket.close()
 print("Sending successful")
+print("Count = " + str(count))

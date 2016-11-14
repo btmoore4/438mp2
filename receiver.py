@@ -22,7 +22,7 @@ class Receiver:
 
     def start(self):
         while True:
-            raw_msg, send_addr = self.sock.recvfrom(PKT+20)
+            raw_msg, send_addr = self.sock.recvfrom(PKT+40)
             #print raw_msg
             data_msg = decodeMess(raw_msg)
             if data_msg[FIN] == 1:

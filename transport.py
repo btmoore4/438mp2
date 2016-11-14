@@ -49,14 +49,14 @@ class MP2Socket:
         It does not return any value on success
         """
         # ----- SEND SYN -----
-        print 'SEND SYN'
+        #print 'SEND SYN'
         self.sock.sendto(synMess(self.seq), addr)
         self.addr = addr
         self.timer = TCPTimeout(5, self.reconnect)
         self.timer.start()
 
         # ----- WAITING FOR SYNACK -----
-        print 'WAITING FOR SYNACK'
+        #print 'WAITING FOR SYNACK'
         raw_msg, server_addr = self.sock.recvfrom(PKT)
         self.timer.stop()
         synack_mess = decodeMess(raw_msg)
@@ -67,7 +67,7 @@ class MP2Socket:
             raise SYNACK_Error("Client expecting valid SYNACK message.")
 
         # ----- SEND ACK -----
-        print 'SEND ACK'
+        #print 'SEND ACK'
         self.sock.sendto(ackMess(synack_mess[SEQ]), addr)
 
         # ----- CONNECTION -----
@@ -85,25 +85,23 @@ class MP2Socket:
         already in use)
         """
         # ----- WAITING FOR SYN -----
-        print 'WAITING FOR SYN'
+        #print 'WAITING FOR SYN'
         self.sock.bind(('', port))
         raw_msg, client_addr = self.sock.recvfrom(PKT)
         syn_mess = decodeMess(raw_msg)
-        #print syn_mess
 
         # ----- IF MESS IS NOT SYN -----
         if syn_mess[SYN] != 1:
             raise SYN_Error("Server expecting SYN message.")
 
         # ----- SEND SYN_ACK -----
-        print 'SEND SYN_ACK' 
+        #print 'SEND SYN_ACK' 
         self.sock.sendto(synackMess(self.seq, syn_mess[SEQ]), client_addr)
 
         # ----- WAIT FOR ACK -----
-        print 'WAIT FOR ACK'
+        #print 'WAIT FOR ACK'
         raw_msg, client_addr = self.sock.recvfrom(PKT)
         ack_mess = decodeMess(raw_msg)
-        print ack_mess
 
         # ----- IF INCORRECT ACK -----
         if ack_mess[ACK] != self.seq + 1:

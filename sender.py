@@ -14,7 +14,7 @@ FIN = 3
 LEN = 4
 DATA = 5
 
-PKT = 50
+PKT = 2048
 TIMEOUT = 10
 
 
@@ -61,6 +61,7 @@ class Sender:
                 pass
         print "SOCKET IS DONE SENDING"
         self.sock.setblocking(1)
+        print 
         while True: 
             fin_mess = finMess(self.nextSeq)
             self.sock.sendto(fin_mess, self.addr)
