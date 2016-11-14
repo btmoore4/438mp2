@@ -9,14 +9,15 @@ filename="tests/peter3.txt"
 count = 0 
 petertests = {}
 petertests[0] = "tests/peter.txt"
-petertests[1] = "tests/peter.txt"
-petertests[2] = "tests/peter.txt"
+petertests[1] = "tests/peter2.txt"
+petertests[2] = "tests/peter3.txt"
 
-if len(sys.argv) == 2:
-    host = str(sys.argv[0])
-    filename = petertests[int(sys.argv[1])-1]
-elif len(sys.argv) == 1:
-    host = sys.argv[0]
+if len(sys.argv) == 3:
+    host = str(sys.argv[1])
+    print host
+    filename = petertests[int(sys.argv[2])-1]
+elif len(sys.argv) == 2:
+    host = str(sys.argv[1])
 
 print "testclient.py - Initiate Socket and Connection"
 f = open(filename, 'rb')
