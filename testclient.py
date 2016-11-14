@@ -4,7 +4,7 @@ import time
 
 host = 'localhost'
 port = 1111
-filename="tests/peter2.txt"
+filename="tests/peter3.txt"
 count = 0 
 
 print "testclient.py - Initiate Socket and Connection"

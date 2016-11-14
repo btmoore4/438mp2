@@ -32,17 +32,21 @@ class Sender:
         self.timer = TCPTimeout(TIMEOUT, self.timeoutUpdate)
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
+        self.recvBuff = 4096 * 2
 
     def start(self):
         while True:
             if len(self.sendBuffer) > 0: 
-                data = self.pop()
-                data_mess = dataMess(data, self.nextSeq)
-                self.sock.sendto(data_mess, self.addr)
-                #print data_mess
-                self.nextSeq = self.nextSeq + len(data)
-                self.noACK[self.nextSeq] = data_mess
-                self.timer.runFirst()
+                if self.nextSeq - self.sendBase > self.recvBuff: 
+                    pass
+                else:
+                    data = self.pop()
+                    data_mess = dataMess(data, self.nextSeq)
+                    self.sock.sendto(data_mess, self.addr)
+                    #print data_mess
+                    self.nextSeq = self.nextSeq + len(data)
+                    self.noACK[self.nextSeq] = data_mess
+                    self.timer.runFirst()
             try:
                 raw_msg = self.sock.recv(PKT)
                 ack_msg = decodeMess(raw_msg)
