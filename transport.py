@@ -1,5 +1,6 @@
 from helper import *
 from sender import *
+from receiver import *
 
 import socket
 import random
@@ -8,15 +9,19 @@ import random
 Implements the MP2 socket class, as described below
 """
 
-SEQ = 0
-ACK = 1
-SYN = 2
-FIN = 3
-LEN = 4
-DATA = 5
-
-PKT = 2048
-PKT2 = 4
+#Defined Errors
+class MP2SocketError(Exception):
+    """ Exception base class for protocol errors """
+    pass
+class SYN_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
+class SYNACK_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
+class ACK_Error(MP2SocketError):
+    def __init__(self, message):
+        self.message = message
 
 class MP2Socket:
     def __init__(self):
@@ -24,7 +29,13 @@ class MP2Socket:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"
         self.seq = random.randint(1, 1000)
-        self.sender = None
+        self.buffer = ""
+        self.addr = None
+        self.type = None
+
+    def reconnect(self):
+        print "TIMEOUT - SENDING AGAIN"
+        self.sock.sendto(synMess(self.seq), self.addr)
 
     def connect(self, addr):
         """
@@ -40,12 +51,16 @@ class MP2Socket:
         # ----- SEND SYN -----
         print 'SEND SYN'
         self.sock.sendto(synMess(self.seq), addr)
+        self.addr = addr
+        self.timer = TCPTimeout(5, self.reconnect)
+        self.timer.start()
 
         # ----- WAITING FOR SYNACK -----
         print 'WAITING FOR SYNACK'
         raw_msg, server_addr = self.sock.recvfrom(PKT)
+        self.timer.stop()
         synack_mess = decodeMess(raw_msg)
-        print synack_mess
+        #print synack_mess
 
         # ----- IF INCORRECT SYNACK -----
         if synack_mess[SYN] != 1 or synack_mess[ACK] != self.seq + 1:
@@ -57,7 +72,7 @@ class MP2Socket:
 
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
-        self.sender = Sender(self.sock, self.seq, addr)
+        self.type = Sender(self.sock, self.seq, addr)
 
     def accept(self, port):
         """
@@ -74,7 +89,7 @@ class MP2Socket:
         self.sock.bind(('', port))
         raw_msg, client_addr = self.sock.recvfrom(PKT)
         syn_mess = decodeMess(raw_msg)
-        print syn_mess
+        #print syn_mess
 
         # ----- IF MESS IS NOT SYN -----
         if syn_mess[SYN] != 1:
@@ -96,6 +111,7 @@ class MP2Socket:
 
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
+        self.type = Receiver(self.sock, self.seq)
         return client_addr
 
     def send(self, data):
@@ -108,7 +124,7 @@ class MP2Socket:
 
         Should be called on a socket after connect or accept
         """
-        self.sender.send(data)
+        self.type.send(data)
 
     def recv(self, length):
         """
@@ -116,34 +132,20 @@ class MP2Socket:
         is available, then return up to `length` bytes. Should return "" when
         the remote end closes the socket
         """
-        #Basic Receiver
+ 
+        """
         while True:
-            raw_msg, send_addr = self.sock.recvfrom(PKT)
-            data_msg = decodeMess(raw_msg)
-            print data_msg
-            ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
-            self.sock.sendto(ack_mess, send_addr)
+            raw_msg, send_addr = self.sock.recvfrom(PKT+20)
+            print raw_msg
+            #data_msg = decodeMess(raw_msg)
+            #ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
+            #self.sock.sendto(ack_mess, send_addr)
+        """
+        return self.type.recv(length)
 
     def close(self):
         """
         Closes the socket and informs the other end that no more data will
         be sent
         """
-        if self.connection == "CLOSED":
-            print "ALREADY CLOSED"
-            return 
-        if self.connection != "ESTABLISHED":
-            #SOMETHING WRONG, ERROR
-            print "ERROR"
-        # ----- SETTING ARB SEQ -----
-        x = 76
-        # ----- SEND FIN -----
-        print 'SEND FIN'
-        fin_mess = finMess(x)
-        self.sock.sendto(fin_mess,self.addr)
-        # ----- WAITING FOR ACK -----
-        print 'WAIT FOR ACK'
-        ack_mess, addr = self.sock.recvfrom(PKT)
-        ack_mess = decodeMess(ack_mess)
-
-
+        self.type.stop()

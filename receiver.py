@@ -1,37 +1,84 @@
+from helper import *
+from timer import *
+from sender import SEQ, ACK, SYN, FIN, LEN, DATA, PKT, TIMEOUT
 
-class Sender:
-    def __init__(self, sock, initSeq):
-        self.sock = sock
-        self.sock.setblocking(0)
-        self.nextSeq = initSeq
-        self.sendBase = initSeq
-        self.closed = False
-        self.buffer = []
+import socket
+import threading
+import thread
+import time
+
+
+class Receiver:
+    def __init__(self, recv_socket, initial_seq):
+        self.sock = recv_socket
+        self.seq = initial_seq
+        self.acked = -1 
+        self.receiverDone = False
+        self.dataBuffer = None 
+        self.prevAck = None
+        self.bufferDone = False
         self.lock = threading.Lock()
-        self.timer = threading.Timer(TIMEOUT, self.timeoutUpdate)
+        self.thread = thread.start_new_thread(self.start, ())
 
-    def start():
-        while self.closed == False:
-            if self.buffer: 
-                data = self.buffer.pop(0)
-                self.sock.sendto(,addr)
-                self.nextSeq = self.nextSeq + len(data)
-            try:
-                msg = self.sock.recv(4096)
-                if ack_num > self.sendBase: 
-                    self.sendBase = ack_num
-                    if self.sendBase == self.nextSeq: 
-                        #Stop Timer
-                    else: 
-                        #start Timer
-            except socket.timeout, e:
+    def start(self):
+        while True:
+            raw_msg, send_addr = self.sock.recvfrom(PKT+20)
+            #print raw_msg
+            data_msg = decodeMess(raw_msg)
+            if data_msg[FIN] == 1:
+                break
+            if self.acked < 0: 
+                self.acked = data_msg[SEQ] + data_msg[LEN]
+                ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
+                self.prevAck = ack_mess
+                self.sock.sendto(ack_mess, send_addr)
+                self.add(data_msg[DATA])
+            elif self.acked == data_msg[SEQ]:
+                ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
+                self.prevAck = ack_mess
+                self.sock.sendto(ack_mess, send_addr)
+                self.add(data_msg[DATA])
+                self.acked = self.acked + data_msg[LEN]
+            else:
+                self.sock.sendto(self.prevAck, send_addr)
+        ack_mess = ackMess(data_msg[SEQ]) 
+        self.sock.sendto(ack_mess, send_addr)
+        self.receiverDone = True
 
-    def timeoutUpdate(): 
+    def recv(self, length): 
+        return self.pop(length)
 
-    def send(data): 
+    def stop(self): 
+        while not self.bufferDone:
+            time.sleep(0.1)
+        time.sleep(1)
+        print "STOPPING SOCKET"
+
+    def add(self, data):
         self.lock.acquire()
-        self.buffer.append(data) 
+        if self.dataBuffer:
+            self.dataBuffer = self.dataBuffer + data
+        else:
+            #print data
+            self.dataBuffer = data
         self.lock.release()
 
-    def stop(): 
-        self.closed = True
+    def pop(self, length):
+        if self.bufferDone:
+            return None
+        while not self.dataBuffer:
+            time.sleep(0.1)
+        self.lock.acquire()
+        if len(self.dataBuffer) > length:
+            data = self.dataBuffer[0:length]
+            self.dataBuffer = self.dataBuffer[length:]
+        else:
+            data = self.dataBuffer
+            self.dataBuffer = ""
+            if self.receiverDone:
+                self.lock.release()
+                self.bufferDone = True
+                return data
+        self.lock.release()
+        return data
+
