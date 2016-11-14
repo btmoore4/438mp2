@@ -36,11 +36,11 @@ class Receiver:
                 self.sock.sendto(ack_mess, send_addr)
                 self.add(data_msg[DATA])
                 self.acked = self.acked + data_msg[LEN]
-		#print self.acked
             else:
                 ack_mess = ackDataMess(self.seq, self.acked) 
                 self.sock.sendto(ack_mess, send_addr)
-
+		print self.acked
+	
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
 	print "RECEIVER IS DONE"
