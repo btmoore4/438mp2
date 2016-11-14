@@ -85,10 +85,19 @@ class Sender:
         self.senderDone = True
 
     def timeoutUpdate(self): 
+	print "TIMEOUT - RESENDING UNACKED MESSAGES"
+	sort_list = self.noACK.keys()
+	if sort_list:
+	    sort_list.sort()
+	    for key in sort_list:	
+            	data = self.noACK[key]
+            	self.sock.sendto(data, self.addr)
+	"""
 	key = self.sortACK()
 	print "TIMEOUT - RESENDING UNACKED MESSAGE: " + str(key)
         data = self.noACK[key]
         self.sock.sendto(data, self.addr)
+	"""
 
     def send(self, data): 
         self.add(data)
