@@ -29,6 +29,7 @@ class MP2Socket:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"
         self.seq = random.randint(1, 1000)
+	print self.seq
         self.buffer = ""
         self.addr = None
         self.type = None
