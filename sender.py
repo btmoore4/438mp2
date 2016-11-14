@@ -16,7 +16,7 @@ DATA = 5
 
 PKT = 2048
 TIMEOUT = 3
-TEST_RTT = 4 
+TEST_RTT = 2 
 
 
 class Sender:
@@ -85,8 +85,9 @@ class Sender:
         self.senderDone = True
 
     def timeoutUpdate(self): 
-        print "TIMEOUT - RESENDING UNACKED MESSAGE"
-        data = self.noACK[sorted(self.noACK, key=self.noACK.get)[0]]
+	key = self.sortACK()
+	print "TIMEOUT - RESENDING UNACKED MESSAGE: " + str(key)
+        data = self.noACK[key]
         self.sock.sendto(data, self.addr)
 
     def send(self, data): 
@@ -108,6 +109,16 @@ class Sender:
         data = self.sendBuffer.pop(0)
         self.lock.release()
         return data
+
+    def sortACK(self):
+	minkey = None
+	for key in self.noACK.keys():
+	    if not minkey:
+		minkey = key
+	    if key < minkey:
+		minkey = key
+	return minkey
+		
 
 
 
