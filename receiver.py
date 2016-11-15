@@ -75,6 +75,22 @@ class Receiver:
             time.sleep(0.1)
             if self.receiverDone:
 		break
+        while len(self.dataBuffer) < length: 
+            time.sleep(0.1)
+            if self.receiverDone:
+                self.lock.acquire()
+                data = self.dataBuffer
+                self.dataBuffer = ""
+                self.lock.release()
+                self.bufferDone = True
+                return data
+        self.lock.acquire()
+        data = self.dataBuffer[0:length]
+        self.dataBuffer = self.dataBuffer[length:]
+        self.lock.release()
+        return data
+
+        """
         self.lock.acquire()
         if len(self.dataBuffer) > length:
             data = self.dataBuffer[0:length]
@@ -88,4 +104,5 @@ class Receiver:
                 return data
         self.lock.release()
         return data
+        """
 
