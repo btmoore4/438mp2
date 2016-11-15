@@ -17,7 +17,7 @@ if len(sys.argv) == 3:
     print host
     filename = petertests[int(sys.argv[2])-1]
 elif len(sys.argv) == 2:
-    host = str(sys.argv[1])
+    filename = petertests[int(sys.argv[1])-1]
 
 print "testclient.py - Initiate Socket and Connection"
 f = open(filename, 'rb')

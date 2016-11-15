@@ -16,7 +16,7 @@ DATA = 5
 
 PKT = 2048
 TIMEOUT = 3
-TEST_RTT = 2 
+TEST_RTT = 4 
 
 
 class Sender:
@@ -34,6 +34,11 @@ class Sender:
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
         self.recvBuff = 2048*16 
+
+    def resendFIN(self):
+        print "RESEND FIN"
+        fin_mess = finMess(self.nextSeq)
+        self.sock.sendto(fin_mess, self.addr)
 
     def start(self):
         while True:
@@ -70,7 +75,10 @@ class Sender:
         while True: 
             fin_mess = finMess(self.nextSeq)
             self.sock.sendto(fin_mess, self.addr)
+            self.finTimer = TCPTimeout(3, self.resenFIN) 
+            self.finTimer.start()
             raw_msg, addr = self.sock.recvfrom(PKT)
+            self.finTimer.stop()
             ack_mess = decodeMess(raw_msg)
             if ack_mess[ACK] == self.nextSeq + 1:
                 break
