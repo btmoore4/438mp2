@@ -15,7 +15,8 @@ LEN = 4
 DATA = 5
 
 PKT = 2048
-TIMEOUT = 5
+TIMEOUT = 3
+TEST_RTT = 2 
 
 
 class Sender:
@@ -29,10 +30,10 @@ class Sender:
         self.noACK = {}
         self.senderOpen = True 
         self.senderDone = False
-        self.timer = TCPTimeout(TIMEOUT, self.timeoutUpdate)
+        self.timer = TCPTimeout(TEST_RTT, self.timeoutUpdate)
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
-        self.recvBuff = 4096 * 10
+        self.recvBuff = 2048*16 
 
     def start(self):
         while True:

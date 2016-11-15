@@ -15,7 +15,6 @@ class Receiver:
         self.acked = -1 
         self.receiverDone = False
         self.dataBuffer = None 
-        self.prevAck = None
         self.bufferDone = False
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
@@ -30,21 +29,18 @@ class Receiver:
             if self.acked < 0: 
                 self.acked = data_msg[SEQ] + data_msg[LEN]
                 ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
-                self.prevAck = ack_mess
                 self.sock.sendto(ack_mess, send_addr)
                 self.add(data_msg[DATA])
             elif self.acked == data_msg[SEQ]:
                 ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
-                self.prevAck = ack_mess
                 self.sock.sendto(ack_mess, send_addr)
                 self.add(data_msg[DATA])
                 self.acked = self.acked + data_msg[LEN]
 		#print self.acked
-            elif self.acked > data_msg[SEQ]:
-                ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
-                self.sock.sendto(ack_mess, send_addr)
             else:
-                self.sock.sendto(self.prevAck, send_addr)
+                ack_mess = ackDataMess(self.seq, self.acked) 
+                self.sock.sendto(ack_mess, send_addr)
+
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
 	print "RECEIVER IS DONE"
