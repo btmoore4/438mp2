@@ -75,7 +75,7 @@ class Sender:
         while True: 
             fin_mess = finMess(self.nextSeq)
             self.sock.sendto(fin_mess, self.addr)
-            self.finTimer = TCPTimeout(3, self.resenFIN) 
+            self.finTimer = TCPTimeout(3, self.resendFIN) 
             self.finTimer.start()
             raw_msg, addr = self.sock.recvfrom(PKT)
             self.finTimer.stop()
