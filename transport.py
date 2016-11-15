@@ -4,6 +4,8 @@ from receiver import *
 
 import socket
 import random
+import threading
+
 
 """
 Implements the MP2 socket class, as described below
@@ -25,11 +27,11 @@ class ACK_Error(MP2SocketError):
 
 class MP2Socket:
     def __init__(self):
+        self.seq = random.randint(1, 1000)
+	print self.seq
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"
-        self.seq = random.randint(1, 1000)
-	print self.seq
         self.buffer = ""
         self.addr = None
         self.type = None
@@ -38,6 +40,7 @@ class MP2Socket:
     def resendSYN(self):
         print "TIMEOUT - SENDING SYN AGAIN"
         self.sock.sendto(synMess(self.seq), self.addr)
+        print threading.active_count()
 
     def resendSYNACK(self):
         print "TIMEOUT - SENDING SYNACK AGAIN"
@@ -107,12 +110,9 @@ class MP2Socket:
         self.synACK = synackMess(self.seq, syn_mess[SEQ])
         self.addr = client_addr
         self.sock.sendto(self.synACK, client_addr)
-        self.timer = TCPTimeout(3, self.resendSYNACK)
-        self.timer.start()
         # ----- WAIT FOR ACK -----
         print 'WAIT FOR ACK'
         raw_msg, client_addr = self.sock.recvfrom(PKT)
-        self.timer.stop()
         ack_mess = decodeMess(raw_msg)
 
         # ----- IF INCORRECT ACK -----
@@ -158,4 +158,5 @@ class MP2Socket:
         Closes the socket and informs the other end that no more data will
         be sent
         """
+        print threading.active_count()
         self.type.stop()

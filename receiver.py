@@ -38,7 +38,7 @@ class Receiver:
             else:
                 ack_mess = ackDataMess(self.seq, self.acked) 
                 self.sock.sendto(ack_mess, send_addr)
-	    print self.acked
+	    #print self.acked
 	
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
@@ -84,20 +84,3 @@ class Receiver:
         self.dataBuffer = self.dataBuffer[length:]
         self.lock.release()
         return data
-
-        """
-        self.lock.acquire()
-        if len(self.dataBuffer) > length:
-            data = self.dataBuffer[0:length]
-            self.dataBuffer = self.dataBuffer[length:]
-        else:
-            data = self.dataBuffer
-            self.dataBuffer = ""
-            if self.receiverDone:
-                self.lock.release()
-                self.bufferDone = True
-                return data
-        self.lock.release()
-        return data
-        """
-

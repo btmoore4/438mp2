@@ -4,7 +4,7 @@ class TCPTimeout:
     def __init__(self, time, func):
         self.timeout = time
         self.func = func
-        self.timer = threading.Timer(self.timeout, self.callBack)
+        self.timer = None
         self.running = False
 
     def callBack(self):
