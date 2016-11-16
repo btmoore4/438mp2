@@ -30,6 +30,7 @@ class MP2Socket:
     def __init__(self):
         self.seq = random.randint(1, 1000)
 	print self.seq
+        sys.stderr.write(str(self.seq) + "\n")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"

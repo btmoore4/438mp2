@@ -23,6 +23,7 @@ class Sender:
     def __init__(self, sender_socket, initial_seq, recv_address):
         self.sock = sender_socket
         self.sock.setblocking(0)
+        self.init = initial_seq
         self.addr = recv_address 
         self.nextSeq = initial_seq
         self.sendBase = initial_seq
@@ -32,6 +33,7 @@ class Sender:
         self.senderDone = False
         self.timer = TCPTimeout(TEST_RTT, self.timeoutUpdate)
         self.lock = threading.Lock()
+        self.lock_noACK = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
         self.recvBuff = 2048*16 
 
@@ -51,13 +53,17 @@ class Sender:
                     self.sock.sendto(data_mess, self.addr)
                     #print data_mess
                     self.nextSeq = self.nextSeq + len(data)
+                    self.lock_noACK.acquire()
                     self.noACK[self.nextSeq] = data_mess
+                    self.lock_noACK.release()
                     self.timer.runFirst()
             try:
                 raw_msg = self.sock.recv(PKT)
                 ack_msg = decodeMess(raw_msg)
                 #print ack_msg
+                self.lock_noACK.acquire()
                 self.noACK.pop(ack_msg[ACK], None)
+                self.lock_noACK.release()
                 if ack_msg[ACK] > self.sendBase: 
                     self.sendBase = ack_msg[ACK]
                     if self.sendBase == self.nextSeq: 
@@ -86,12 +92,15 @@ class Sender:
 
     def timeoutUpdate(self): 
 	print "TIMEOUT - RESENDING UNACKED MESSAGES"
+        sys.stderr.write('stderr - SENDER TIMEOUT\n')
+        self.lock_noACK.acquire()
 	sort_list = self.noACK.keys()
 	if sort_list:
 	    sort_list.sort()
 	    for key in sort_list:	
             	data = self.noACK[key]
             	self.sock.sendto(data, self.addr)
+        self.lock_noACK.release()
 	"""
 	key = self.sortACK()
 	print "TIMEOUT - RESENDING UNACKED MESSAGE: " + str(key)
@@ -109,6 +118,7 @@ class Sender:
         while not self.senderDone:
             time.sleep(0.1)
         print "STOPPING SOCKET"
+        print self.nextSeq - self.init
 
     def add(self, data):
         self.lock.acquire()
@@ -120,16 +130,4 @@ class Sender:
         data = self.sendBuffer.pop(0)
         self.lock.release()
         return data
-
-    def sortACK(self):
-	minkey = None
-	for key in self.noACK.keys():
-	    if not minkey:
-		minkey = key
-	    if key < minkey:
-		minkey = key
-	return minkey
-		
-
-
 

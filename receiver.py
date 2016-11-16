@@ -14,6 +14,7 @@ class Receiver:
         self.sock = recv_socket
         self.seq = initial_seq
         self.acked = -1 
+        self.init = initial_seq
         self.receiverDone = False
         self.dataBuffer = None 
         self.bufferDone = False
@@ -45,6 +46,7 @@ class Receiver:
         self.sock.sendto(ack_mess, send_addr)
 	print "RECEIVER IS DONE"
         sys.stderr.write('stderr - RECEIVER IS DONE\n')
+        sys.stderr.write(str(self.acked) + "\n")
         self.receiverDone = True
 
     def recv(self, length): 
@@ -74,7 +76,9 @@ class Receiver:
             time.sleep(0.1)
             if self.receiverDone:
 		break
+        self.lock.acquire()
         while len(self.dataBuffer) <= length: 
+            self.lock.release()
             time.sleep(0.1)
             if self.receiverDone:
                 sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
@@ -85,8 +89,9 @@ class Receiver:
                 self.bufferDone = True
                 sys.stderr.write('stderr - BUFFER DONE\n')
                 return data
-        self.lock.acquire()
+            self.lock.acquire()
         data = self.dataBuffer[0:length]
         self.dataBuffer = self.dataBuffer[length:]
         self.lock.release()
         return data
+
