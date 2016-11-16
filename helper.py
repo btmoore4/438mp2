@@ -1,5 +1,5 @@
 #File Containing Helper Functions
-DELIMITER = "\+"
+DELIMITER = ";+"
 
 def synMess(seq): 
     return formatMess(seq, 0, 1, 0, 0,"")

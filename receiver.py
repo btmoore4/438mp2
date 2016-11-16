@@ -49,6 +49,18 @@ class Receiver:
         sys.stderr.write(str(self.acked) + "\n")
         self.receiverDone = True
         sys.stderr.write('stderr - RECEIVERDONE is TRUE\n')
+        while True:
+            self.lock.acquire()
+            if len(self.dataBuffer) < 1:
+                self.lock.release()
+                break
+            if self.bufferDone:
+                self.lock.release()
+                break
+            self.lock.release()
+            time.sleep(0.1)
+        self.bufferDone = True
+        sys.stderr.write('stderr -BUFFER IS DONE\n')
 
     def recv(self, length): 
         return self.pop(length)
@@ -70,59 +82,20 @@ class Receiver:
         self.lock.release()
 
     def pop(self, length):
-        if self.bufferDone:
-            return ""
         while True:
             self.lock.acquire()
-            if len(self.dataBuffer) > 0 or self.receiverDone:
+            if len(self.dataBuffer) > length:
+                data = self.dataBuffer[0:length]
+                self.dataBuffer = self.dataBuffer[length:]
                 self.lock.release()
-                break
-            self.lock.release()
-            time.sleep(0.1)
-
-        while True:
-            self.lock.acquire()
-            if len(self.dataBuffer) > length: 
+                return data
+            elif self.bufferDone:
                 self.lock.release()
-                break
-            if self.receiverDone:
-                sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
-                #data = self.dataBuffer
-                #self.dataBuffer = ""
-                sys.stderr.write('stderr - BUFFER DONE\n')
-                self.bufferDone = True
+                return ""
+            elif self.receiverDone:
                 data = self.dataBuffer
+                self.bufferDone = True
                 self.lock.release()
                 return data
             self.lock.release()
             time.sleep(0.1)
-
-        self.lock.acquire()
-        data = self.dataBuffer[0:length]
-        self.dataBuffer = self.dataBuffer[length:]
-        self.lock.release()
-        return data
-
-        """
-        while len(self.dataBuffer) < 1:
-            time.sleep(0.1)
-            if self.receiverDone:
-		break
-        while len(self.dataBuffer) <= length: 
-            time.sleep(0.1)
-            if self.receiverDone:
-                sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
-                self.lock.acquire()
-                data = self.dataBuffer
-                self.dataBuffer = ""
-                self.lock.release()
-                sys.stderr.write('stderr - BUFFER DONE\n')
-                self.bufferDone = True
-                return data
-        self.lock.acquire()
-        data = self.dataBuffer[0:length]
-        self.dataBuffer = self.dataBuffer[length:]
-        self.lock.release()
-        return data
-        """
-
