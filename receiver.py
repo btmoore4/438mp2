@@ -70,9 +70,9 @@ class Receiver:
         recv_data = self.pop(length)
         self.count = self.count + len(recv_data)
         if recv_data == "":
-            sys.stderr.write('stderr - WTFJ\n')
+            sys.stderr.write('stderr - RECV nothing\n')
         if recv_data == None:
-            sys.stderr.write('stderr - WTFJ\n')
+            sys.stderr.write('stderr - RECV none\n')
         return recv_data
 
     def receiver_stop(self): 

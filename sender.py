@@ -30,7 +30,7 @@ class Sender:
         self.sendBase = initial_seq
         self.sendBuffer = []
         self.estRTT = rtt 
-        self.devRTT = rtt 
+        self.devRTT = 2*rtt 
         self.noACK = {}
         self.senderOpen = True 
         self.senderDone = False
@@ -94,8 +94,7 @@ class Sender:
         self.senderDone = True
 
     def timeoutUpdate(self): 
-	print "TIMEOUT - RESENDING UNACKED MESSAGES"
-        sys.stderr.write('stderr - SENDER TIMEOUT\n')
+        sys.stderr.write('stderr - SENDER TIMEOUT: ' + str(self.sendBase) + '\n')
         self.lock_noACK.acquire()
 	sort_list = self.noACK.keys()
 	if sort_list:
