@@ -13,10 +13,10 @@ class Receiver:
     def __init__(self, recv_socket, initial_seq):
         self.sock = recv_socket
         self.seq = initial_seq
-        self.acked = -1 
         self.init = initial_seq
-        self.receiverDone = False
+        self.acked = -1 
         self.dataBuffer = ""
+        self.receiverDone = False
         self.bufferDone = False
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
@@ -48,6 +48,7 @@ class Receiver:
         sys.stderr.write('stderr - RECEIVER IS DONE\n')
         sys.stderr.write(str(self.acked) + "\n")
         self.receiverDone = True
+        sys.stderr.write('stderr - RECEIVERDONE is TRUE\n')
 
     def recv(self, length): 
         return self.pop(length)
@@ -86,14 +87,16 @@ class Receiver:
                 break
             if self.receiverDone:
                 sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
-                data = self.dataBuffer
-                self.dataBuffer = ""
+                #data = self.dataBuffer
+                #self.dataBuffer = ""
                 sys.stderr.write('stderr - BUFFER DONE\n')
                 self.bufferDone = True
+                data = self.dataBuffer
                 self.lock.release()
                 return data
             self.lock.release()
             time.sleep(0.1)
+
         self.lock.acquire()
         data = self.dataBuffer[0:length]
         self.dataBuffer = self.dataBuffer[length:]
