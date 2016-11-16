@@ -20,6 +20,8 @@ class Receiver:
         self.bufferDone = False
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
+        self.count = 0
+        self.final = -1
 
     def start(self):
         while True:
@@ -28,6 +30,7 @@ class Receiver:
             if data_msg[FIN] == 1:
                 break
             if self.acked < 0: 
+                self.init = data_msg[SEQ]
                 self.acked = data_msg[SEQ] + data_msg[LEN]
                 ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
                 self.sock.sendto(ack_mess, send_addr)
@@ -44,34 +47,36 @@ class Receiver:
 	
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
-	print "RECEIVER IS DONE"
+        self.final = self.acked - self.init
+        sys.stderr.write(str(self.final) + "\n")
         sys.stderr.write('stderr - RECEIVER IS DONE\n')
-        sys.stderr.write(str(self.acked) + "\n")
+        sys.stderr.write('srderr - Total Received: ' + str(self.final) + "\n")
+        sys.stderr.write('stderr - count so far: ' + str(self.count) + '\n')
         self.receiverDone = True
-        sys.stderr.write('stderr - RECEIVERDONE is TRUE\n')
+
         while True:
             self.lock.acquire()
             if len(self.dataBuffer) < 1:
                 self.lock.release()
                 break
-            if self.bufferDone:
-                self.lock.release()
-                break
             self.lock.release()
             time.sleep(0.1)
-        self.bufferDone = True
+
         sys.stderr.write('stderr -BUFFER IS DONE\n')
+        self.bufferDone = True
 
     def recv(self, length): 
-        return self.pop(length)
+        recv_data = self.pop(length)
+        self.count = self.count + len(recv_data)
+        return recv_data
 
     def stop(self): 
-        sys.stderr.write('stderr - TRYING TO STOPPING SOCKET\n')
+        sys.stderr.write('stderr - STOPPING SOCKET\n')
+        sys.stderr.write('stderr - count: ' + str(self.count) + '\n')
         while not self.bufferDone:
             time.sleep(0.1)
         time.sleep(1)
-        print "STOPPING SOCKET"
-        sys.stderr.write('stderr - STOPPING SOCKET\n')
+        sys.stderr.write('stderr - STOPPED SOCKET\n')
 
     def add(self, data):
         self.lock.acquire()
@@ -86,15 +91,13 @@ class Receiver:
             self.lock.acquire()
             if len(self.dataBuffer) > length:
                 data = self.dataBuffer[0:length]
-                self.dataBuffer = self.dataBuffer[length:]
+                rem_data = self.dataBuffer[length:]
+                self.dataBuffer = rem_data
                 self.lock.release()
                 return data
-            elif self.bufferDone:
-                self.lock.release()
-                return ""
-            elif self.receiverDone:
+            if self.receiverDone and len(self.dataBuffer) <=length:
                 data = self.dataBuffer
-                self.bufferDone = True
+                self.dataBuffer = ""
                 self.lock.release()
                 return data
             self.lock.release()

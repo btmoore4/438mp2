@@ -44,10 +44,6 @@ class MP2Socket:
         self.sock.sendto(synMess(self.seq), self.addr)
         print threading.active_count()
 
-    def resendSYNACK(self):
-        print "TIMEOUT - SENDING SYNACK AGAIN"
-        self.sock.sendto(self.synACK, self.addr)
-
     def connect(self, addr):
         """
         Connects to a remote MP2 transport server. Address is specified by a
@@ -161,5 +157,6 @@ class MP2Socket:
         Closes the socket and informs the other end that no more data will
         be sent
         """
-        print threading.active_count()
         self.type.stop()
+
+
