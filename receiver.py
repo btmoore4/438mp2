@@ -70,7 +70,37 @@ class Receiver:
 
     def pop(self, length):
         if self.bufferDone:
-            return None
+            return ""
+        while True:
+            self.lock.acquire()
+            if len(self.dataBuffer) > 0 or self.receiverDone:
+                self.lock.release()
+                break
+            self.lock.release()
+            time.sleep(0.1)
+
+        while True:
+            self.lock.acquire()
+            if len(self.dataBuffer) > length: 
+                self.lock.release()
+                break
+            if self.receiverDone:
+                sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
+                data = self.dataBuffer
+                self.dataBuffer = ""
+                sys.stderr.write('stderr - BUFFER DONE\n')
+                self.bufferDone = True
+                self.lock.release()
+                return data
+            self.lock.release()
+            time.sleep(0.1)
+        self.lock.acquire()
+        data = self.dataBuffer[0:length]
+        self.dataBuffer = self.dataBuffer[length:]
+        self.lock.release()
+        return data
+
+        """
         while len(self.dataBuffer) < 1:
             time.sleep(0.1)
             if self.receiverDone:
@@ -83,12 +113,13 @@ class Receiver:
                 data = self.dataBuffer
                 self.dataBuffer = ""
                 self.lock.release()
-                self.bufferDone = True
                 sys.stderr.write('stderr - BUFFER DONE\n')
+                self.bufferDone = True
                 return data
         self.lock.acquire()
         data = self.dataBuffer[0:length]
         self.dataBuffer = self.dataBuffer[length:]
         self.lock.release()
         return data
+        """
 
