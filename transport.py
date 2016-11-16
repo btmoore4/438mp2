@@ -128,12 +128,15 @@ class MP2Socket:
         # ----- IF INCORRECT ACK -----
         if ack_mess[ACK] != self.seq + 1:
             raise ACK_Error("Server expecting valid ACK message.")
+            sys.stderr.write('stderr - CONNECTION ESTABLISHED\n')
+            self.sock_type = "R"
+            self.type = Receiver(self.sock, self.seq, ack_mess, client_addr)
 
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
         sys.stderr.write('stderr - CONNECTION ESTABLISHED\n')
         self.sock_type = "R"
-        self.type = Receiver(self.sock, self.seq)
+        self.type = Receiver(self.sock, self.seq, None, client_addr)
         return client_addr
 
     def send(self, data):

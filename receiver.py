@@ -10,7 +10,7 @@ import sys
 
 
 class Receiver:
-    def __init__(self, recv_socket, initial_seq):
+    def __init__(self, recv_socket, initial_seq, start_data, start_send_addr):
         self.sock = recv_socket
         self.seq = initial_seq
         self.init = initial_seq
@@ -19,10 +19,17 @@ class Receiver:
         self.receiverDone = False
         self.bufferDone = False
         self.bufferNotEmpty = False
-        self.lock = threading.Lock()
-        self.thread = thread.start_new_thread(self.start, ())
         self.count = 0
         self.final = -1
+        self.lock = threading.Lock()
+        if start_data:
+            self.init = start_data[SEQ]
+            self.acked = start_data[SEQ] + start_data[LEN]
+            ack_mess = ackDataMess(self.seq, start_data[SEQ] + start_data[LEN]) 
+            self.sock.sendto(ack_mess, start_send_addr)
+            self.add(start_data[DATA])
+            self.bufferNotEmpty = True
+        self.thread = thread.start_new_thread(self.start, ())
 
     def start(self):
         while True:

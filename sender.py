@@ -96,8 +96,8 @@ class Sender:
 
     def timeoutUpdate(self): 
 
-        if len(self.timeOutPrint) == 4:
-            sys.stderr.write('stderr - SENDER TIMEOUT: ' + str(self.timeOutPrint[0]) + "--" + str(self.sendBase) + '\n')
+        if len(self.timeOutPrint) == 8:
+            sys.stderr.write('stderr - SENDER TIMEOUT: '+str(self.timeOutPrint[0])+"-"+str(self.sendBase)+'\n')
             self.timeOutPrint = []
         else:
             self.timeOutPrint.append(self.sendBase)
