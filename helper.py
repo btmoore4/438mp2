@@ -24,7 +24,7 @@ def formatMess(seq_num, ack_num, syn, fin, len_data, data):
     return message
 
 def decodeMess(mess):
-    message = mess.split(DELIMITER)
+    message = mess.split(DELIMITER, 5)
     for i in xrange(0,5):
         message[i] = int(message[i])
     return message
