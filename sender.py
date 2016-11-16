@@ -39,6 +39,7 @@ class Sender:
         self.lock_noACK = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
         self.recvBuff = 2048*16 
+        self.timeOutPrint = []
 
     def resendFIN(self):
         print "RESEND FIN"
@@ -94,7 +95,13 @@ class Sender:
         self.senderDone = True
 
     def timeoutUpdate(self): 
-        sys.stderr.write('stderr - SENDER TIMEOUT: ' + str(self.sendBase) + '\n')
+
+        if len(self.timeOutPrint) == 4:
+            sys.stderr.write('stderr - SENDER TIMEOUT: ' + str(self.timeOutPrint[0]) + "--" + str(self.sendBase) + '\n')
+            self.timeOutPrint = []
+        else:
+            self.timeOutPrint.append(self.sendBase)
+
         self.lock_noACK.acquire()
 	sort_list = self.noACK.keys()
 	if sort_list:
