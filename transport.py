@@ -150,7 +150,7 @@ class MP2Socket:
             #ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
             #self.sock.sendto(ack_mess, send_addr)
         """
-        return self.type.recv(length)
+        return self.type.receiver_recv(length)
 
     def close(self):
         """

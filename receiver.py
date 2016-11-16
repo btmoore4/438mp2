@@ -18,6 +18,7 @@ class Receiver:
         self.dataBuffer = ""
         self.receiverDone = False
         self.bufferDone = False
+        self.bufferNotEmpty = False
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
         self.count = 0
@@ -35,6 +36,7 @@ class Receiver:
                 ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
                 self.sock.sendto(ack_mess, send_addr)
                 self.add(data_msg[DATA])
+                self.bufferNotEmpty = True
             elif self.acked == data_msg[SEQ]:
                 ack_mess = ackDataMess(self.seq, data_msg[SEQ] + data_msg[LEN]) 
                 self.sock.sendto(ack_mess, send_addr)
@@ -65,9 +67,12 @@ class Receiver:
         sys.stderr.write('stderr -BUFFER IS DONE\n')
         self.bufferDone = True
 
-    def recv(self, length): 
+    def receiver_recv(self, length): 
+        #sys.stderr.write('stderr - RECV: ' + str(length) + '\n')
         recv_data = self.pop(length)
         self.count = self.count + len(recv_data)
+        if recv_data == "":
+            sys.stderr.write('stderr - WTFJ\n')
         return recv_data
 
     def stop(self): 
@@ -87,6 +92,8 @@ class Receiver:
         self.lock.release()
 
     def pop(self, length):
+        while not self.bufferNotEmpty:
+            time.sleep(0.1)
         while True:
             self.lock.acquire()
             if len(self.dataBuffer) > length:
