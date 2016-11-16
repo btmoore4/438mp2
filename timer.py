@@ -7,6 +7,9 @@ class TCPTimeout:
         self.timer = None
         self.running = False
 
+    def setTIMEOUT(self, time):
+        self.timeout = time
+
     def callBack(self):
         self.func()
         self.running = False

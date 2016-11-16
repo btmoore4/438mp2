@@ -6,6 +6,7 @@ import sys
 import socket
 import random
 import threading
+import time
 
 
 """
@@ -35,14 +36,15 @@ class MP2Socket:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.connection = "INIT"
         self.buffer = ""
+        self.timeout_mess = None
         self.addr = None
         self.type = None
         self.sock_type= None
         self.synACK = None
 
-    def resendSYN(self):
+    def resend_mess(self):
         print "TIMEOUT - SENDING SYN AGAIN"
-        self.sock.sendto(synMess(self.seq), self.addr)
+        self.sock.sendto(self.timeout_mess, self.addr)
         print threading.active_count()
 
     def connect(self, addr):
@@ -59,15 +61,18 @@ class MP2Socket:
         # ----- SEND SYN -----
         print 'BEGINNING CONNECT'
         print 'SEND SYN'
-        self.sock.sendto(synMess(self.seq), addr)
+        self.timeout_mess = synMess(self.seq)
+        self.sock.sendto(self.timeout_mess, addr)
+        sender_rtt = time.time()
         self.addr = addr
-        self.timer = TCPTimeout(3, self.resendSYN)
+        self.timer = TCPTimeout(TIMEOUT, self.resend_mess)
         self.timer.start()
 
         # ----- WAITING FOR SYNACK -----
         print 'WAITING FOR SYNACK'
         raw_msg, server_addr = self.sock.recvfrom(PKT)
         self.timer.stop()
+        sender_rtt = sender_rtt - time.time()
         synack_mess = decodeMess(raw_msg)
         #print synack_mess
 
@@ -82,7 +87,7 @@ class MP2Socket:
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
         self.sock_type = "S"
-        self.type = Sender(self.sock, self.seq, addr)
+        self.type = Sender(self.sock, self.seq, addr, sender_rtt)
 
     def accept(self, port):
         """
@@ -107,12 +112,17 @@ class MP2Socket:
 
         # ----- SEND SYN_ACK -----
         print 'SEND SYN_ACK' 
-        self.synACK = synackMess(self.seq, syn_mess[SEQ])
+        self.timeout_mess = synackMess(self.seq, syn_mess[SEQ])
         self.addr = client_addr
-        self.sock.sendto(self.synACK, client_addr)
+        self.addr = client_addr
+        self.sock.sendto(self.timeout_mess, client_addr)
+        self.timer = TCPTimeout(TIMEOUT, self.resend_mess)
+        self.timer.start()
+
         # ----- WAIT FOR ACK -----
         print 'WAIT FOR ACK'
         raw_msg, client_addr = self.sock.recvfrom(PKT)
+        self.timer.stop()
         ack_mess = decodeMess(raw_msg)
 
         # ----- IF INCORRECT ACK -----

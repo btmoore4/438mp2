@@ -16,12 +16,12 @@ LEN = 4
 DATA = 5
 
 PKT = 2048
-TIMEOUT = 3
-TEST_RTT = 2 
+TIMEOUT = 4
+TEST_RTT = 1 
 
 
 class Sender:
-    def __init__(self, sender_socket, initial_seq, recv_address):
+    def __init__(self, sender_socket, initial_seq, recv_address, rtt):
         self.sock = sender_socket
         self.sock.setblocking(0)
         self.init = initial_seq
@@ -29,10 +29,12 @@ class Sender:
         self.nextSeq = initial_seq
         self.sendBase = initial_seq
         self.sendBuffer = []
+        self.estRTT = rtt 
+        self.devRTT = rtt 
         self.noACK = {}
         self.senderOpen = True 
         self.senderDone = False
-        self.timer = TCPTimeout(TEST_RTT, self.timeoutUpdate)
+        self.timer = TCPTimeout(self.estRTT + self.devRTT + TEST_RTT, self.timeoutUpdate)
         self.lock = threading.Lock()
         self.lock_noACK = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
