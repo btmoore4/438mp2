@@ -22,19 +22,19 @@ class Receiver:
         self.count = 0
         self.final = -1
         self.lock = threading.Lock()
-        if start_data:
-            self.init = start_data[SEQ]
-            self.acked = start_data[SEQ] + start_data[LEN]
-            ack_mess = ackDataMess(self.seq, start_data[SEQ] + start_data[LEN]) 
-            self.sock.sendto(ack_mess, start_send_addr)
-            self.add(start_data[DATA])
-            self.bufferNotEmpty = True
+        self.start_data = start_data
+        self.start_addr = start_send_addr
         self.thread = thread.start_new_thread(self.start, ())
 
     def start(self):
         while True:
-            raw_msg, send_addr = self.sock.recvfrom(PKT+50)
-            data_msg = decodeMess(raw_msg)
+            if self.start_data:
+                send_addr = self.start_addr
+                data_msg = self.start_data
+                self.start_data = None
+            else:
+                raw_msg, send_addr = self.sock.recvfrom(PKT+50)
+                data_msg = decodeMess(raw_msg)
             if data_msg[FIN] == 1:
                 break
             if self.acked < 0: 
