@@ -5,6 +5,7 @@ import socket
 import threading
 import thread
 import time
+import sys
 
 #DEFINED
 SEQ = 0
@@ -101,12 +102,6 @@ class Sender:
             	data = self.noACK[key]
             	self.sock.sendto(data, self.addr)
         self.lock_noACK.release()
-	"""
-	key = self.sortACK()
-	print "TIMEOUT - RESENDING UNACKED MESSAGE: " + str(key)
-        data = self.noACK[key]
-        self.sock.sendto(data, self.addr)
-	"""
 
     def send(self, data): 
         self.add(data)

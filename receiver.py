@@ -16,7 +16,7 @@ class Receiver:
         self.acked = -1 
         self.init = initial_seq
         self.receiverDone = False
-        self.dataBuffer = None 
+        self.dataBuffer = ""
         self.bufferDone = False
         self.lock = threading.Lock()
         self.thread = thread.start_new_thread(self.start, ())
@@ -62,23 +62,20 @@ class Receiver:
 
     def add(self, data):
         self.lock.acquire()
-        if self.dataBuffer:
+        if len(self.dataBuffer) > 0:
             self.dataBuffer = self.dataBuffer + data
         else:
-            #print data
             self.dataBuffer = data
         self.lock.release()
 
     def pop(self, length):
         if self.bufferDone:
             return None
-        while not self.dataBuffer:
+        while len(self.dataBuffer) < 1:
             time.sleep(0.1)
             if self.receiverDone:
 		break
-        self.lock.acquire()
         while len(self.dataBuffer) <= length: 
-            self.lock.release()
             time.sleep(0.1)
             if self.receiverDone:
                 sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
@@ -89,7 +86,7 @@ class Receiver:
                 self.bufferDone = True
                 sys.stderr.write('stderr - BUFFER DONE\n')
                 return data
-            self.lock.acquire()
+        self.lock.acquire()
         data = self.dataBuffer[0:length]
         self.dataBuffer = self.dataBuffer[length:]
         self.lock.release()
