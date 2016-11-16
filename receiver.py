@@ -6,6 +6,7 @@ import socket
 import threading
 import thread
 import time
+import sys
 
 
 class Receiver:
@@ -43,16 +44,19 @@ class Receiver:
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
 	print "RECEIVER IS DONE"
+        sys.stderr.write('stderr - RECEIVER IS DONE\n')
         self.receiverDone = True
 
     def recv(self, length): 
         return self.pop(length)
 
     def stop(self): 
+        sys.stderr.write('stderr - TRYING TO STOPPING SOCKET\n')
         while not self.bufferDone:
             time.sleep(0.1)
         time.sleep(1)
         print "STOPPING SOCKET"
+        sys.stderr.write('stderr - STOPPING SOCKET\n')
 
     def add(self, data):
         self.lock.acquire()
@@ -70,14 +74,16 @@ class Receiver:
             time.sleep(0.1)
             if self.receiverDone:
 		break
-        while len(self.dataBuffer) < length: 
+        while len(self.dataBuffer) <= length: 
             time.sleep(0.1)
             if self.receiverDone:
+                sys.stderr.write('stderr - GETTING TO BUFFER DONE\n')
                 self.lock.acquire()
                 data = self.dataBuffer
                 self.dataBuffer = ""
                 self.lock.release()
                 self.bufferDone = True
+                sys.stderr.write('stderr - BUFFER DONE\n')
                 return data
         self.lock.acquire()
         data = self.dataBuffer[0:length]

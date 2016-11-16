@@ -103,7 +103,9 @@ class Sender:
         self.add(data)
 
     def stop(self): 
+        self.lock.acquire()
         self.senderOpen = False
+        self.lock.release()
         while not self.senderDone:
             time.sleep(0.1)
         print "STOPPING SOCKET"

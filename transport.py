@@ -2,6 +2,7 @@ from helper import *
 from sender import *
 from receiver import *
 
+import sys
 import socket
 import random
 import threading
@@ -121,6 +122,7 @@ class MP2Socket:
 
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
+        sys.stderr.write('stderr - CONNECTION ESTABLISHED\n')
         self.type = Receiver(self.sock, self.seq)
         return client_addr
 
