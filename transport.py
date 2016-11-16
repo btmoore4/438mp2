@@ -37,6 +37,7 @@ class MP2Socket:
         self.buffer = ""
         self.addr = None
         self.type = None
+        self.sock_type= None
         self.synACK = None
 
     def resendSYN(self):
@@ -80,6 +81,7 @@ class MP2Socket:
 
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
+        self.sock_type = "S"
         self.type = Sender(self.sock, self.seq, addr)
 
     def accept(self, port):
@@ -120,6 +122,7 @@ class MP2Socket:
         # ----- CONNECTION -----
         print "CONNECTION ESTABLISHED"
         sys.stderr.write('stderr - CONNECTION ESTABLISHED\n')
+        self.sock_type = "R"
         self.type = Receiver(self.sock, self.seq)
         return client_addr
 
@@ -157,6 +160,9 @@ class MP2Socket:
         Closes the socket and informs the other end that no more data will
         be sent
         """
-        self.type.stop()
+        if self.sock_type == "R":
+            self.type.receiver_stop()
+        else:
+            self.type.stop()
 
 

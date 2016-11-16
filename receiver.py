@@ -50,7 +50,6 @@ class Receiver:
         ack_mess = ackMess(data_msg[SEQ]) 
         self.sock.sendto(ack_mess, send_addr)
         self.final = self.acked - self.init
-        sys.stderr.write(str(self.final) + "\n")
         sys.stderr.write('stderr - RECEIVER IS DONE\n')
         sys.stderr.write('srderr - Total Received: ' + str(self.final) + "\n")
         sys.stderr.write('stderr - count so far: ' + str(self.count) + '\n')
@@ -68,14 +67,15 @@ class Receiver:
         self.bufferDone = True
 
     def receiver_recv(self, length): 
-        #sys.stderr.write('stderr - RECV: ' + str(length) + '\n')
         recv_data = self.pop(length)
         self.count = self.count + len(recv_data)
         if recv_data == "":
             sys.stderr.write('stderr - WTFJ\n')
+        if recv_data == None:
+            sys.stderr.write('stderr - WTFJ\n')
         return recv_data
 
-    def stop(self): 
+    def receiver_stop(self): 
         sys.stderr.write('stderr - STOPPING SOCKET\n')
         sys.stderr.write('stderr - count: ' + str(self.count) + '\n')
         while not self.bufferDone:
@@ -97,7 +97,7 @@ class Receiver:
         while True:
             self.lock.acquire()
             if len(self.dataBuffer) > length:
-                data = self.dataBuffer[0:length]
+                data = self.dataBuffer[:length]
                 rem_data = self.dataBuffer[length:]
                 self.dataBuffer = rem_data
                 self.lock.release()
